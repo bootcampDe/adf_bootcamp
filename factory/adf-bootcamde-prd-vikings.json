@@ -1,0 +1,9 @@
+{
+	"name": "adf-bootcamde-prd-vikings",
+	"location": "eastus2",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "09d70037-ee16-49ef-82e1-e99169407306",
+		"tenantId": "6a0e3a3b-723a-437e-a6f4-003fa15b3117"
+	}
+}
