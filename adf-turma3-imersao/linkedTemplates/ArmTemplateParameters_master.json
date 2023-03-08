@@ -1,0 +1,42 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "adf-turma3-imersao"
+		},
+		"ls_azure_sql_powerquery_connectionString": {
+			"value": ""
+		},
+		"ls_azure_sql_properties_typeProperties_connectionString_secretName": {
+			"value": "secret-db-azure"
+		},
+		"ls_data_lake_properties_typeProperties_url": {
+			"value": "https://dlsturma3imersao.dfs.core.windows.net"
+		},
+		"ls_file_system_properties_typeProperties_host": {
+			"value": "C:\\adf"
+		},
+		"ls_file_system_properties_typeProperties_userId": {
+			"value": "adf_user"
+		},
+		"ls_http_api_properties_typeProperties_url": {
+			"value": "https://api.nytimes.com/svc/movies/v2/"
+		},
+		"ls_key_vault_properties_typeProperties_baseUrl": {
+			"value": "https://kv-turma3-imersao.vault.azure.net/"
+		},
+		"ls_sql_local_properties_typeProperties_connectionString_secretName": {
+			"value": "secret-db-local"
+		},
+		"TR_3_properties_typeProperties_scope": {
+			"value": "/subscriptions/8ce334f5-c44c-4bb4-9ad5-c5905c1945da/resourceGroups/rg-turma3-imersao/providers/Microsoft.Storage/storageAccounts/dlsturma3imersao"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}

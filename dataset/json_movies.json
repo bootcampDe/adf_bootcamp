@@ -1,0 +1,30 @@
+{
+	"name": "json_movies",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_http_api",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"token_api": {
+				"type": "string",
+				"defaultValue": "UQBeoisT7QGEkNHPEpJ8CeGtWfoUm8Lh"
+			},
+			"Relative_URL": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "HttpServerLocation",
+				"relativeUrl": {
+					"value": "@concat(dataset().Relative_URL,'&api-key=',dataset().token_api)",
+					"type": "Expression"
+				}
+			}
+		},
+		"schema": {}
+	}
+}

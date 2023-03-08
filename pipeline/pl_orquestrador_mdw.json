@@ -1,0 +1,64 @@
+{
+	"name": "pl_orquestrador_mdw",
+	"properties": {
+		"activities": [
+			{
+				"name": "pl_generic_silver",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_generic_silver",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "pl_generic_gold",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "pl_generic_silver",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_generic_gold",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "pl_generic_db",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "pl_generic_gold",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_generic_db",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			}
+		],
+		"folder": {
+			"name": "Databricks"
+		},
+		"annotations": []
+	}
+}

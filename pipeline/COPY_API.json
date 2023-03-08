@@ -1,0 +1,67 @@
+{
+	"name": "COPY_API",
+	"properties": {
+		"activities": [
+			{
+				"name": "API_TO_DATALAKE",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "HttpReadSettings",
+							"requestMethod": "GET",
+							"requestTimeout": ""
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"sink": {
+						"type": "JsonSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "JsonWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "json_movies",
+						"type": "DatasetReference",
+						"parameters": {
+							"token_api": "UQBeoisT7QGEkNHPEpJ8CeGtWfoUm8Lh",
+							"Relative_URL": "critics/all.json?"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "Json_saida_api",
+						"type": "DatasetReference",
+						"parameters": {
+							"container_name": "trusted",
+							"file_name": "criticas_filmes.json"
+						}
+					}
+				]
+			}
+		],
+		"folder": {
+			"name": "PIPELINES_ACTIVITIES"
+		},
+		"annotations": []
+	}
+}

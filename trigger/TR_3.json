@@ -1,0 +1,26 @@
+{
+	"name": "TR_3",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "TR_STORAGE_EVENTS",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "BlobEventsTrigger",
+		"typeProperties": {
+			"blobPathBeginsWith": "/filesluiz/blobs/",
+			"blobPathEndsWith": ".csv",
+			"ignoreEmptyBlobs": true,
+			"scope": "/subscriptions/8ce334f5-c44c-4bb4-9ad5-c5905c1945da/resourceGroups/rg-turma3-imersao/providers/Microsoft.Storage/storageAccounts/dlsturma3imersao",
+			"events": [
+				"Microsoft.Storage.BlobCreated",
+				"Microsoft.Storage.BlobDeleted"
+			]
+		}
+	}
+}

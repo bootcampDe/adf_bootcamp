@@ -1,0 +1,60 @@
+{
+	"name": "pl_generic_db",
+	"properties": {
+		"activities": [
+			{
+				"name": "ForEach",
+				"type": "ForEach",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@variables('notebooks')",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "ntb_geneirc_gold",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": {
+									"value": "@item()",
+									"type": "Expression"
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "ls_databricks",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			}
+		],
+		"variables": {
+			"notebooks": {
+				"type": "Array",
+				"defaultValue": [
+					"/Shared/DB/Gold_DB_Dim_Artista_Python",
+					"/Shared/DB/Gold_DB_Dim_Calendario_Python",
+					"/Shared/DB/Gold_DB_Dim_Local_Python",
+					"/Shared/DB/Gold_DB_Dim_Organizador_Python",
+					"/Shared/DB/Gold_DB_Fato_Evento_Python"
+				]
+			}
+		},
+		"folder": {
+			"name": "Databricks/DB"
+		},
+		"annotations": []
+	}
+}

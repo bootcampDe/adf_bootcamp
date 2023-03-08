@@ -1,0 +1,44 @@
+{
+	"name": "ORQUESTADOR",
+	"properties": {
+		"activities": [
+			{
+				"name": "COPY_GETMETADATA",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "COPY_GETMETADATA",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "COPY_LOOKUP",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "COPY_GETMETADATA",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "COPY_LOOKUP",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			}
+		],
+		"folder": {
+			"name": "PIPELINES_ACTIVITIES"
+		},
+		"annotations": []
+	}
+}

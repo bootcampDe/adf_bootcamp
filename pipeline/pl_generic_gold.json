@@ -1,0 +1,60 @@
+{
+	"name": "pl_generic_gold",
+	"properties": {
+		"activities": [
+			{
+				"name": "ForEach",
+				"type": "ForEach",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@variables('notebooks')",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "ntb_geneirc_gold",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": {
+									"value": "@item()",
+									"type": "Expression"
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "ls_databricks",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			}
+		],
+		"variables": {
+			"notebooks": {
+				"type": "Array",
+				"defaultValue": [
+					"/Shared/gold/Gold_Dim_Calendario",
+					"/Shared/gold/Silver_Gold_Dim_Artista_Python",
+					"/Shared/gold/Silver_Gold_Fato_Evento_SQL",
+					"/Shared/gold/Solver_Gold_Dim_Localizacao_SQL",
+					"/Shared/gold/Solver_Gold_Dim_Organizador_Python"
+				]
+			}
+		},
+		"folder": {
+			"name": "Databricks/gold"
+		},
+		"annotations": []
+	}
+}
