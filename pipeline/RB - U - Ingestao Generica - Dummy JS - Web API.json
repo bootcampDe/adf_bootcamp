@@ -59,7 +59,7 @@
 				"typeProperties": {
 					"variableName": "v_arquivo_destino",
 					"value": {
-						"value": "@toLower(concat(\n    pipeline().parameters.p_colecao_origem,\n    '__', \n    if(\n        empty(variables('v_data_particao')),\n        formatDateTime(utcNow(), 'yyyyMMdd'),\n        replace(variables('v_data_particao'), '/', '')\n    ),\n    '.json'\n))",
+						"value": "@toLower(concat(\n    pipeline().parameters.p_colecao_origem,\n    '__', \n    if(\n        empty(variables('v_data_particao')),\n        formatDateTime(utcNow(), 'yyyyMMdd'),\n        replace(variables('v_data_particao'), '/', '')\n    )\n))",
 						"type": "Expression"
 					}
 				}
