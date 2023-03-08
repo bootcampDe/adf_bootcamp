@@ -3,7 +3,7 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "API_TO_DATALAKE",
+				"name": "times criticas",
 				"type": "Copy",
 				"dependsOn": [],
 				"policy": {
@@ -39,12 +39,64 @@
 				},
 				"inputs": [
 					{
-						"referenceName": "json_movies",
+						"referenceName": "json_nytimes",
 						"type": "DatasetReference",
 						"parameters": {
-							"token_api": "UQBeoisT7QGEkNHPEpJ8CeGtWfoUm8Lh",
+							"token_api": "MHHyeXITaJYe4dZE3WsBNsjAmg9N1Xn3",
 							"Relative_URL": "critics/all.json?"
 						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "Json_saida_api",
+						"type": "DatasetReference",
+						"parameters": {
+							"container_name": "trusted",
+							"file_name": "criticas_filmes.json"
+						}
+					}
+				]
+			},
+			{
+				"name": "filmes omdba",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "HttpReadSettings",
+							"requestMethod": "GET",
+							"requestTimeout": ""
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"sink": {
+						"type": "JsonSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "JsonWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "Json_omdbapi",
+						"type": "DatasetReference"
 					}
 				],
 				"outputs": [
@@ -60,7 +112,7 @@
 			}
 		],
 		"folder": {
-			"name": "PIPELINES_ACTIVITIES"
+			"name": "Api"
 		},
 		"annotations": []
 	}
