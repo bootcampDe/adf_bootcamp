@@ -1,0 +1,3061 @@
+{
+	"name": "RB - U - Ingestao Generica - Dummy JS - Web API",
+	"properties": {
+		"activities": [
+			{
+				"name": "SVB - Definir data_particao",
+				"description": "Atribui um valor à variável [v_data_particao]. Se o parâmetro [p_data_particao] estiver preenchido, atribui o seu valor à [v_data_particao], senão, atribui a data atual na formatação definida pelo parâmetro [p_formato_data_particao], ou deixa em branco.",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_data_particao",
+					"value": {
+						"value": "@if(\n    not(empty(pipeline().parameters.p_data_particao)),\n    substring(replace(pipeline().parameters.p_data_particao,'-','/'),0,10),\n    if(\n        equals(pipeline().parameters.p_tipo_carga,'F'),\n        '1900/01/01',\n        if(\n            or(\n                empty(pipeline().parameters.p_formato_data_particao),\n                equals(pipeline().parameters.p_formato_data_particao, 'D')\n            ),\n            convertFromUtc(utcnow(), 'E. South America Standard Time', 'yyyy/MM/dd'),\n            if(\n                equals(pipeline().parameters.p_formato_data_particao, 'M'),\n                convertFromUtc(utcnow(), 'E. South America Standard Time', 'yyyy/MM/dd'),\n                if(\n                    equals(pipeline().parameters.p_formato_data_particao, 'A'),\n                    convertFromUtc(utcnow(), 'E. South America Standard Time', 'yyyy/MM/dd'),\n                    if(\n                        equals(pipeline().parameters.p_formato_data_particao, 'N'), \n                        '', \n                        convertFromUtc(utcnow(), 'E. South America Standard Time', 'yyyy/MM/dd')\n                    )\n                )\n            )\n        )\n    )  \n)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SVB - Definir diretorio_completo",
+				"description": "Atribui um valor à variável [v_diretorio_completo], a partir da concatenação do diretório destino, da coleção de origem e da data de partição.",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "SVB - Definir diretorio_destino",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "SVB - Definir data_particao",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_diretorio_completo",
+					"value": {
+						"value": "@toLower(concat(\n    variables('v_diretorio_destino'),\n    '/', \n    pipeline().parameters.p_colecao_origem,\n    if(\n        empty(variables('v_data_particao')),\n        '',\n        concat('/', variables('v_data_particao'))\n    )\n))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SVB - Definir arquivo_destino",
+				"description": "Atribui um valor à variável [v_arquivo_destino], a partir da concatenação da coleção de origem e da data de partição.",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "SVB - Definir data_particao",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_arquivo_destino",
+					"value": {
+						"value": "@toLower(concat(\n    pipeline().parameters.p_colecao_origem,\n    '__', \n    if(\n        empty(variables('v_data_particao')),\n        formatDateTime(utcNow(), 'yyyyMMdd'),\n        replace(variables('v_data_particao'), '/', '')\n    )\n))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SVB - Definir diretorio_destino",
+				"description": "Atribui um valor à variável [v_diretorio_destino]. Se o parâmetro [p_diretorio_destino] estiver preenchido, atribui o valor dele, senão, atribui um valor default.",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_diretorio_destino",
+					"value": {
+						"value": "@toLower(if(\n    empty(pipeline().parameters.p_diretorio_destino),\n    'cosmos_db/onboardings_db',\n    pipeline().parameters.p_diretorio_destino\n))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SVB - Definir rascunho_nome_tabela_delta",
+				"description": "Atribui um valor à variável [v_rascunho_nome_tabela_delta], a partir da concatenação do diretório de destino e da coleção de origem.",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "SVB - Definir diretorio_destino",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_rascunho_nome_tabela_delta",
+					"value": {
+						"value": "@toLower(concat(\n    variables('v_diretorio_destino'),\n    '/',\n    pipeline().parameters.p_colecao_origem\n))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "IFC - Etapa Ingestao Bronze e Dados Raw OK",
+				"description": "Para ser True o parâmetro \"p_etapa_ingestao\" deve conter \"B\" de bronze ou estar vazio ou com \".\". E também o retorno da variável \"v_etapa_bronze\" deve ser True.",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "IFC - Etapa Ingestao RAW",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@and(\n    or(\n        or(\n            empty(pipeline().parameters.p_rb_etapa_ingestao), \n            equals(pipeline().parameters.p_rb_etapa_ingestao,'.')\n        ),\n        contains(pipeline().parameters.p_rb_etapa_ingestao,'B')\n    ),\n    variables('v_etapa_bronze')\n)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "NTB - Ingestao - Bronze",
+							"description": "Executa um notebook genérico para ingestão da coleção do Cosmos DB na camada Bronze.",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 2,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": {
+									"value": "@concat(\n    '/Repos/adb_bootcamp/delta/bronze/',\n    variables('v_diretorio_destino'), '/generico_json'\n)",
+									"type": "Expression"
+								},
+								"baseParameters": {
+									"pn_diretorio_raw": {
+										"value": "@variables('v_diretorio_completo')",
+										"type": "Expression"
+									},
+									"pn_data_particao": {
+										"value": "@variables('v_data_particao')",
+										"type": "Expression"
+									},
+									"pn_arquivo": {
+										"value": "@variables('v_arquivo_destino')",
+										"type": "Expression"
+									},
+									"pn_rascunho_nome_tabela_delta": {
+										"value": "@variables('v_rascunho_nome_tabela_delta')",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "ls_adb_bootcamp",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "IFC - Etapa Ingestao RAW",
+				"description": "Para ser True o parâmetro \"p_etapa_ingestao\" deve conter \"R\" de bronze ou estar vazio ou com \".\".",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "SVB - Definir arquivo_destino",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "SVB - Definir diretorio_completo",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "SVB - Definir rascunho_nome_tabela_delta",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@or(\n    or(\n        empty(pipeline().parameters.p_rb_etapa_ingestao), \n        equals(pipeline().parameters.p_rb_etapa_ingestao,'.')\n    ),\n    contains(pipeline().parameters.p_rb_etapa_ingestao,'R')\n)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "SVB - F - Define Flag Etapa Bronze",
+							"description": "Infere True.",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "v_etapa_bronze",
+								"value": true
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "SVB - T - Define Flag Etapa Bronze",
+							"description": "Se retornar linhas copiadas True, senão False.",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "CPD - Ingestao - Landing",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "v_etapa_bronze",
+								"value": {
+									"value": "@if(\n    greater(activity('CPD - Ingestao - Landing').output.rowsCopied, 0),\n    true,\n    false\n)",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "CPD - Ingestao - Landing",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 3,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "JsonSource",
+									"storeSettings": {
+										"type": "HttpReadSettings",
+										"requestMethod": "GET"
+									},
+									"formatSettings": {
+										"type": "JsonReadSettings"
+									}
+								},
+								"sink": {
+									"type": "JsonSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "JsonWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"parallelCopies": 2,
+								"translator": {
+									"type": "TabularTranslator",
+									"mappings": [
+										{
+											"source": {
+												"path": "$['_id']['$oid']"
+											},
+											"sink": {
+												"name": "id",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['dispositivo']['_id']"
+											},
+											"sink": {
+												"name": "dispositivo__id",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['dispositivo']['modelo']"
+											},
+											"sink": {
+												"name": "modelo",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['localizacao']['latitude']"
+											},
+											"sink": {
+												"name": "localizacao_latitude",
+												"type": "Double"
+											}
+										},
+										{
+											"source": {
+												"path": "$['localizacao']['longitude']"
+											},
+											"sink": {
+												"name": "localizacao_longitude",
+												"type": "Double"
+											}
+										},
+										{
+											"source": {
+												"path": "$['dataInicio']['$date']"
+											},
+											"sink": {
+												"name": "dataInicio",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['pontosAtencao']"
+											},
+											"sink": {
+												"name": "pontosAtencao",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['pontosMaximoAtencao']"
+											},
+											"sink": {
+												"name": "pontosMaximoAtencao",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['versao']"
+											},
+											"sink": {
+												"name": "versao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['permissoesNecessarias']"
+											},
+											"sink": {
+												"name": "permissoesNecessarias",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['suspeito']"
+											},
+											"sink": {
+												"name": "suspeito",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][0]['_id']"
+											},
+											"sink": {
+												"name": "passos_0_id",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][0]['passoEditavelAte']"
+											},
+											"sink": {
+												"name": "passoEditavelAte",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][0]['ordem']"
+											},
+											"sink": {
+												"name": "ordem",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][0]['status']"
+											},
+											"sink": {
+												"name": "passos_0_status",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][0]['descricao']"
+											},
+											"sink": {
+												"name": "passos_0_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][0]['dataInicio']['$date']"
+											},
+											"sink": {
+												"name": "passos_0_dataInicio",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][0]['dataFim']['$date']"
+											},
+											"sink": {
+												"name": "passos_0_dataFim",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][1]['_id']"
+											},
+											"sink": {
+												"name": "passos_1_id",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][1]['status']"
+											},
+											"sink": {
+												"name": "passos_1_status",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][1]['descricao']"
+											},
+											"sink": {
+												"name": "passos_1_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][1]['dataInicio']['$date']"
+											},
+											"sink": {
+												"name": "passos_1_dataInicio",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][1]['dataFim']['$date']"
+											},
+											"sink": {
+												"name": "passos_1_dataFim",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][2]['_id']"
+											},
+											"sink": {
+												"name": "passos_2_id",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][2]['status']"
+											},
+											"sink": {
+												"name": "passos_2_status",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][2]['descricao']"
+											},
+											"sink": {
+												"name": "passos_2_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][2]['dataInicio']['$date']"
+											},
+											"sink": {
+												"name": "passos_2_dataInicio",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][2]['dataFim']['$date']"
+											},
+											"sink": {
+												"name": "passos_2_dataFim",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][3]['_id']"
+											},
+											"sink": {
+												"name": "passos_3_id",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][3]['status']"
+											},
+											"sink": {
+												"name": "passos_3_status",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][3]['descricao']"
+											},
+											"sink": {
+												"name": "passos_3_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][3]['dataInicio']['$date']"
+											},
+											"sink": {
+												"name": "passos_3_dataInicio",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][3]['dataFim']['$date']"
+											},
+											"sink": {
+												"name": "passos_3_dataFim",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][4]['_id']"
+											},
+											"sink": {
+												"name": "passos_4_id",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][4]['status']"
+											},
+											"sink": {
+												"name": "passos_4_status",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][4]['descricao']"
+											},
+											"sink": {
+												"name": "passos_4_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][4]['dataInicio']['$date']"
+											},
+											"sink": {
+												"name": "passos_4_dataInicio",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][4]['dataFim']['$date']"
+											},
+											"sink": {
+												"name": "passos_4_dataFim",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][5]['_id']"
+											},
+											"sink": {
+												"name": "passos_5_id",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][5]['status']"
+											},
+											"sink": {
+												"name": "passos_5_status",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][5]['descricao']"
+											},
+											"sink": {
+												"name": "passos_5_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][5]['dataInicio']['$date']"
+											},
+											"sink": {
+												"name": "passos_5_dataInicio",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][5]['dataFim']['$date']"
+											},
+											"sink": {
+												"name": "passos_5_dataFim",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][6]['_id']"
+											},
+											"sink": {
+												"name": "passos_6_id",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][6]['status']"
+											},
+											"sink": {
+												"name": "passos_6_status",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][6]['descricao']"
+											},
+											"sink": {
+												"name": "passos_6_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][6]['dataInicio']['$date']"
+											},
+											"sink": {
+												"name": "passos_6_dataInicio",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][6]['dataFim']['$date']"
+											},
+											"sink": {
+												"name": "passos_6_dataFim",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][7]['_id']"
+											},
+											"sink": {
+												"name": "passos_7_id",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][7]['status']"
+											},
+											"sink": {
+												"name": "passos_7_status",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][7]['descricao']"
+											},
+											"sink": {
+												"name": "passos_7_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][7]['dataInicio']['$date']"
+											},
+											"sink": {
+												"name": "passos_7_dataInicio",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][7]['dataFim']['$date']"
+											},
+											"sink": {
+												"name": "passos_7_dataFim",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][8]['_id']"
+											},
+											"sink": {
+												"name": "passos_8_id",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][8]['status']"
+											},
+											"sink": {
+												"name": "passos_8_status",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][8]['descricao']"
+											},
+											"sink": {
+												"name": "passos_8_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][8]['dataInicio']['$date']"
+											},
+											"sink": {
+												"name": "passos_8_dataInicio",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][8]['dataFim']['$date']"
+											},
+											"sink": {
+												"name": "passos_8_dataFim",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][9]['_id']"
+											},
+											"sink": {
+												"name": "passos_9_id",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][9]['status']"
+											},
+											"sink": {
+												"name": "passos_9_status",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][9]['descricao']"
+											},
+											"sink": {
+												"name": "passos_9_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][9]['dataInicio']['$date']"
+											},
+											"sink": {
+												"name": "passos_9_dataInicio",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][9]['dataFim']['$date']"
+											},
+											"sink": {
+												"name": "passos_9_dataFim",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][10]['_id']"
+											},
+											"sink": {
+												"name": "passos_10_id",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][10]['status']"
+											},
+											"sink": {
+												"name": "passos_10_status",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][10]['descricao']"
+											},
+											"sink": {
+												"name": "passos_10_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][10]['dataInicio']['$date']"
+											},
+											"sink": {
+												"name": "passos_10_dataInicio",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][10]['dataFim']['$date']"
+											},
+											"sink": {
+												"name": "passos_10_dataFim",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][11]['_id']"
+											},
+											"sink": {
+												"name": "passos_11_id",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][11]['status']"
+											},
+											"sink": {
+												"name": "passos_11_status",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][11]['descricao']"
+											},
+											"sink": {
+												"name": "passos_11_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][11]['dataInicio']['$date']"
+											},
+											"sink": {
+												"name": "passos_11_dataInicio",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][11]['dataFim']['$date']"
+											},
+											"sink": {
+												"name": "passos_11_dataFim",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][12]['_id']"
+											},
+											"sink": {
+												"name": "passos_12_id",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][12]['status']"
+											},
+											"sink": {
+												"name": "passos_12_status",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][12]['descricao']"
+											},
+											"sink": {
+												"name": "passos_12_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][12]['dataInicio']['$date']"
+											},
+											"sink": {
+												"name": "passos_12_dataInicio",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][12]['dataFim']['$date']"
+											},
+											"sink": {
+												"name": "passos_12_dataFim",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][13]['_id']"
+											},
+											"sink": {
+												"name": "passos_13_id",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][13]['status']"
+											},
+											"sink": {
+												"name": "passos_13_status",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][13]['descricao']"
+											},
+											"sink": {
+												"name": "passos_13_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][13]['dataInicio']['$date']"
+											},
+											"sink": {
+												"name": "passos_13_dataInicio",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][13]['dataFim']['$date']"
+											},
+											"sink": {
+												"name": "passos_13_dataFim",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][14]['_id']"
+											},
+											"sink": {
+												"name": "passos_14_id",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][14]['status']"
+											},
+											"sink": {
+												"name": "passos_14_status",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][14]['descricao']"
+											},
+											"sink": {
+												"name": "passos_14_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][14]['dataInicio']['$date']"
+											},
+											"sink": {
+												"name": "passos_14_dataInicio",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][14]['dataFim']['$date']"
+											},
+											"sink": {
+												"name": "passos_14_dataFim",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][15]['_id']"
+											},
+											"sink": {
+												"name": "passos_15_id",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][15]['status']"
+											},
+											"sink": {
+												"name": "passos_15_status",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][15]['descricao']"
+											},
+											"sink": {
+												"name": "passos_15_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][15]['dataInicio']['$date']"
+											},
+											"sink": {
+												"name": "passos_15_dataInicio",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][15]['dataFim']['$date']"
+											},
+											"sink": {
+												"name": "passos_15_dataFim",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][16]['_id']"
+											},
+											"sink": {
+												"name": "passos_16_id",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][16]['status']"
+											},
+											"sink": {
+												"name": "passos_16_status",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][16]['descricao']"
+											},
+											"sink": {
+												"name": "passos_16_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][16]['dataInicio']['$date']"
+											},
+											"sink": {
+												"name": "passos_16_dataInicio",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][16]['dataFim']['$date']"
+											},
+											"sink": {
+												"name": "passos_16_dataFim",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][17]['_id']"
+											},
+											"sink": {
+												"name": "passos_17_id",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][17]['status']"
+											},
+											"sink": {
+												"name": "passos_17_status",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][17]['descricao']"
+											},
+											"sink": {
+												"name": "passos_17_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][17]['dataInicio']['$date']"
+											},
+											"sink": {
+												"name": "passos_17_dataInicio",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][17]['dataFim']['$date']"
+											},
+											"sink": {
+												"name": "passos_17_dataFim",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][18]['_id']"
+											},
+											"sink": {
+												"name": "passos_18_id",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][18]['status']"
+											},
+											"sink": {
+												"name": "passos_18_status",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][18]['descricao']"
+											},
+											"sink": {
+												"name": "passos_18_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][18]['dataInicio']['$date']"
+											},
+											"sink": {
+												"name": "passos_18_dataInicio",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['passos'][18]['dataFim']['$date']"
+											},
+											"sink": {
+												"name": "passos_18_dataFim",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['lastModification']['$date']"
+											},
+											"sink": {
+												"name": "lastModification",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['creationDate']['$date']"
+											},
+											"sink": {
+												"name": "creationDate",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['version']"
+											},
+											"sink": {
+												"name": "version",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['situacao']['status']"
+											},
+											"sink": {
+												"name": "situacao_status",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['situacao']['codigo']"
+											},
+											"sink": {
+												"name": "situacao_codigo",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['situacao']['mensagem']"
+											},
+											"sink": {
+												"name": "mensagem",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['retomavel']"
+											},
+											"sink": {
+												"name": "retomavel",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['limiteRequisicaoFotoDocumentoFrente']"
+											},
+											"sink": {
+												"name": "limiteRequisicaoFotoDocumentoFrente",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['limiteRequisicaoFotoDocumentoVerso']"
+											},
+											"sink": {
+												"name": "limiteRequisicaoFotoDocumentoVerso",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['adicionaDispositivoBlacklist']"
+											},
+											"sink": {
+												"name": "adicionaDispositivoBlacklist",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['_class']"
+											},
+											"sink": {
+												"name": "_class",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['listaAtencao'][0]['motivo']"
+											},
+											"sink": {
+												"name": "motivo",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['listaAtencao'][0]['dataRegistro']['$date']"
+											},
+											"sink": {
+												"name": "listaAtencao_0_dataRegistro",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['listaAtencao'][0]['pontos']"
+											},
+											"sink": {
+												"name": "pontos",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['listaAtencao'][0]['idItemAtencao']"
+											},
+											"sink": {
+												"name": "idItemAtencao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['cartaoServiceErro']"
+											},
+											"sink": {
+												"name": "cartaoServiceErro",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['apelido']"
+											},
+											"sink": {
+												"name": "candidato_apelido",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['cpf']"
+											},
+											"sink": {
+												"name": "candidato_cpf",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['tokenValido']"
+											},
+											"sink": {
+												"name": "tokenValido",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['pep']"
+											},
+											"sink": {
+												"name": "pep",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['possuiOutroOnboardingAndamento']"
+											},
+											"sink": {
+												"name": "possuiOutroOnboardingAndamento",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['cpfPertenceCliente']"
+											},
+											"sink": {
+												"name": "cpfPertenceCliente",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['possuiRestricoesInternas']"
+											},
+											"sink": {
+												"name": "possuiRestricoesInternas",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['possuiRestricoesExternas']"
+											},
+											"sink": {
+												"name": "possuiRestricoesExternas",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['consentimento']['nome']"
+											},
+											"sink": {
+												"name": "candidato_consentimento_nome",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['consentimento']['termoId']"
+											},
+											"sink": {
+												"name": "candidato_consentimento_termoId",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['consentimento']['versao']"
+											},
+											"sink": {
+												"name": "candidato_consentimento_versao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['consentimento']['canal']"
+											},
+											"sink": {
+												"name": "candidato_consentimento_canal",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['consentimento']['ativo']"
+											},
+											"sink": {
+												"name": "candidato_consentimento_ativo",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['consentimento']['itensTermos'][0]['_id']"
+											},
+											"sink": {
+												"name": "candidato_consentimento_itensTermos_0_id",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['consentimento']['itensTermos'][0]['descricao']"
+											},
+											"sink": {
+												"name": "candidato_consentimento_itensTermos_0_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['consentimento']['itensTermos'][0]['aceito']"
+											},
+											"sink": {
+												"name": "candidato_consentimento_itensTermos_0_aceito",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['consentimento']['itensTermos'][0]['obrigatorio']"
+											},
+											"sink": {
+												"name": "candidato_consentimento_itensTermos_0_obrigatorio",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['consentimento']['cpf']"
+											},
+											"sink": {
+												"name": "candidato_consentimento_cpf",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['telefone']"
+											},
+											"sink": {
+												"name": "telefone",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['email']"
+											},
+											"sink": {
+												"name": "email",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['selfie']"
+											},
+											"sink": {
+												"name": "selfie",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['estadoCivil']"
+											},
+											"sink": {
+												"name": "estadoCivil",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['nomeConjuge']"
+											},
+											"sink": {
+												"name": "nomeConjuge",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['ocupacao']['codigo']"
+											},
+											"sink": {
+												"name": "candidato_ocupacao_codigo",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['ocupacao']['codigoOficial']"
+											},
+											"sink": {
+												"name": "codigoOficial",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['ocupacao']['nome']"
+											},
+											"sink": {
+												"name": "candidato_ocupacao_nome",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['ocupacao']['principal']"
+											},
+											"sink": {
+												"name": "principal",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['renda']"
+											},
+											"sink": {
+												"name": "renda",
+												"type": "Double"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['tipoDocumento']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_tipoDocumento",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['fotoFrente']"
+											},
+											"sink": {
+												"name": "fotoFrente",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['fotoVerso']"
+											},
+											"sink": {
+												"name": "fotoVerso",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['fotoFrenteCorrigida']"
+											},
+											"sink": {
+												"name": "fotoFrenteCorrigida",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['fotoVersoCorrigida']"
+											},
+											"sink": {
+												"name": "fotoVersoCorrigida",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['ocr']['tipoDocumento']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_ocr_tipoDocumento",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['ocr']['numeroRg']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_ocr_numeroRg",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['ocr']['dataEmissao']['$date']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_ocr_dataEmissao",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['ocr']['nome']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_ocr_nome",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['ocr']['nomeMae']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_ocr_nomeMae",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['ocr']['nomePai']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_ocr_nomePai",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['ocr']['dataNascimento']['$date']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_ocr_dataNascimento",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['ocr']['cpf']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_ocr_cpf",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['ocr']['numeroCnh']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_ocr_numeroCnh",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['ocr']['dataPrimeiraHabilitacao']['$date']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_ocr_dataPrimeiraHabilitacao",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['ocr']['validade']['$date']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_ocr_validade",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['ocr']['orgaoEmissor']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_ocr_orgaoEmissor",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['ocr']['estadoEmissor']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_ocr_estadoEmissor",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['ocr']['ocrFrenteEnviado']"
+											},
+											"sink": {
+												"name": "ocrFrenteEnviado",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['ocr']['ocrVersoEnviado']"
+											},
+											"sink": {
+												"name": "ocrVersoEnviado",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['dadosInformadosCandidato']['numeroRg']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_dadosInformadosCandidato_numeroRg",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['dadosInformadosCandidato']['dataEmissao']['$date']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_dadosInformadosCandidato_dataEmissao",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['dadosInformadosCandidato']['orgaoEmissor']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_dadosInformadosCandidato_orgaoEmissor",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['dadosInformadosCandidato']['estadoEmissor']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_dadosInformadosCandidato_estadoEmissor",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['dadosInformadosCandidato']['nome']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_dadosInformadosCandidato_nome",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['dadosInformadosCandidato']['nomeMae']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_dadosInformadosCandidato_nomeMae",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['dadosInformadosCandidato']['nomePai']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_dadosInformadosCandidato_nomePai",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['dadosInformadosCandidato']['naturalidadeCidade']['codigo']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_dadosInformadosCandidato_naturalidadeCidade_codigo",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['dadosInformadosCandidato']['naturalidadeCidade']['codigoLocalidade']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_dadosInformadosCandidato_naturalidadeCidade_codigoLocalidade",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['dadosInformadosCandidato']['naturalidadeCidade']['nome']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_dadosInformadosCandidato_naturalidadeCidade_nome",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['dadosInformadosCandidato']['naturalidadeUf']['codigo']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_dadosInformadosCandidato_naturalidadeUf_codigo",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['dadosInformadosCandidato']['naturalidadeUf']['sigla']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_dadosInformadosCandidato_naturalidadeUf_sigla",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['dadosInformadosCandidato']['naturalidadeUf']['nome']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_dadosInformadosCandidato_naturalidadeUf_nome",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['dadosInformadosCandidato']['nacionalidade']['codigo']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_dadosInformadosCandidato_nacionalidade_codigo",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['dadosInformadosCandidato']['nacionalidade']['nome']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_dadosInformadosCandidato_nacionalidade_nome",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['dadosInformadosCandidato']['dataNascimento']['$date']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_dadosInformadosCandidato_dataNascimento",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['dadosInformadosCandidato']['numeroCnh']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_dadosInformadosCandidato_numeroCnh",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['dadosInformadosCandidato']['dataPrimeiraHabilitacao']['$date']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_dadosInformadosCandidato_dataPrimeiraHabilitacao",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['dadosInformadosCandidato']['validade']['$date']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_dadosInformadosCandidato_validade",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['documentoscopia']['chave']"
+											},
+											"sink": {
+												"name": "chave",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['documentoscopia']['dataEnvio']['$date']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_documentoscopia_dataEnvio",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['documentoscopia']['status']['codigo']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_documentoscopia_status_codigo",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['documentoscopia']['status']['descricao']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_documentoscopia_status_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['documentoscopia']['status']['detalhe']"
+											},
+											"sink": {
+												"name": "detalhe",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['documentoscopia']['status']['motivo']['codigo']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_documentoscopia_status_motivo_codigo",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['documentoIdentificacao']['documentoscopia']['status']['motivo']['descricao']"
+											},
+											"sink": {
+												"name": "candidato_documentoIdentificacao_documentoscopia_status_motivo_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['endereco']['cep']"
+											},
+											"sink": {
+												"name": "candidato_endereco_cep",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['endereco']['logradouro']"
+											},
+											"sink": {
+												"name": "candidato_endereco_logradouro",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['endereco']['uf']['codigo']"
+											},
+											"sink": {
+												"name": "candidato_endereco_uf_codigo",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['endereco']['uf']['sigla']"
+											},
+											"sink": {
+												"name": "candidato_endereco_uf_sigla",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['endereco']['uf']['nome']"
+											},
+											"sink": {
+												"name": "candidato_endereco_uf_nome",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['endereco']['cidade']['codigo']"
+											},
+											"sink": {
+												"name": "candidato_endereco_cidade_codigo",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['endereco']['cidade']['codigoLocalidade']"
+											},
+											"sink": {
+												"name": "candidato_endereco_cidade_codigoLocalidade",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['endereco']['cidade']['nome']"
+											},
+											"sink": {
+												"name": "candidato_endereco_cidade_nome",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['endereco']['bairro']"
+											},
+											"sink": {
+												"name": "candidato_endereco_bairro",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['endereco']['numero']"
+											},
+											"sink": {
+												"name": "candidato_endereco_numero",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['endereco']['complemento']"
+											},
+											"sink": {
+												"name": "candidato_endereco_complemento",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['questionarioPositivacao']['TicketId']"
+											},
+											"sink": {
+												"name": "TicketId",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['questionarioPositivacao']['Questions'][0]['idPergunta']"
+											},
+											"sink": {
+												"name": "candidato_questionarioPositivacao_Questions_0_idPergunta",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['questionarioPositivacao']['Questions'][0]['pergunta']"
+											},
+											"sink": {
+												"name": "pergunta",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['questionarioPositivacao']['Questions'][0]['enviada']"
+											},
+											"sink": {
+												"name": "enviada",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['questionarioPositivacao']['Questions'][0]['respondida']"
+											},
+											"sink": {
+												"name": "respondida",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['questionarioPositivacao']['Questions'][0]['respostas']"
+											},
+											"sink": {
+												"name": "candidato_questionarioPositivacao_Questions_0_respostas",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['questionarioPositivacao']['Questions'][0]['enviadoEm']"
+											},
+											"sink": {
+												"name": "enviadoEm",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['questionarioPositivacao']['ResultMessage']"
+											},
+											"sink": {
+												"name": "ResultMessage",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['questionarioPositivacao']['ResultCode']"
+											},
+											"sink": {
+												"name": "ResultCode",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['respostasPositivacao'][0]['idPergunta']"
+											},
+											"sink": {
+												"name": "candidato_respostasPositivacao_0_idPergunta",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['respostasPositivacao'][0]['respostaValidada']"
+											},
+											"sink": {
+												"name": "respostaValidada",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['respostasPositivacao'][0]['tempoResposta']"
+											},
+											"sink": {
+												"name": "tempoResposta",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['respostasPositivacao'][0]['respondidoEm']"
+											},
+											"sink": {
+												"name": "respondidoEm",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['respostasPositivacao'][0]['respostaEnviada']"
+											},
+											"sink": {
+												"name": "respostaEnviada",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['planosAssinaturas'][0]['idPlano']"
+											},
+											"sink": {
+												"name": "idPlano",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['planosAssinaturas'][0]['nome']"
+											},
+											"sink": {
+												"name": "candidato_planosAssinaturas_0_nome",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['planosAssinaturas'][0]['valor']"
+											},
+											"sink": {
+												"name": "valor",
+												"type": "Double"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['planosAssinaturas'][0]['categoria']"
+											},
+											"sink": {
+												"name": "categoria",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['planosAssinaturas'][0]['beneficios']"
+											},
+											"sink": {
+												"name": "candidato_planosAssinaturas_0_beneficios",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['planosAssinaturas'][0]['pedirDiaDebito']"
+											},
+											"sink": {
+												"name": "pedirDiaDebito",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['planosAssinaturas'][0]['pedirDiaVencimentoFaturaCartao']"
+											},
+											"sink": {
+												"name": "pedirDiaVencimentoFaturaCartao",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['planosAssinaturas'][0]['diasVencimentoDisponiveis']"
+											},
+											"sink": {
+												"name": "candidato_planosAssinaturas_0_diasVencimentoDisponiveis",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['planosAssinaturas'][0]['atual']"
+											},
+											"sink": {
+												"name": "atual",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['planosAssinaturas'][0]['recomendada']"
+											},
+											"sink": {
+												"name": "recomendada",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['planosAssinaturas'][0]['idTermo']"
+											},
+											"sink": {
+												"name": "idTermo",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['dadosRfb']['nome']"
+											},
+											"sink": {
+												"name": "candidato_dadosRfb_nome",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['dadosRfb']['sexo']"
+											},
+											"sink": {
+												"name": "sexo",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['dadosRfb']['nomeMae']"
+											},
+											"sink": {
+												"name": "candidato_dadosRfb_nomeMae",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['dadosRfb']['situacaoCadastral']"
+											},
+											"sink": {
+												"name": "situacaoCadastral",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['dadosRfb']['dataNascimento']['$date']"
+											},
+											"sink": {
+												"name": "candidato_dadosRfb_dataNascimento",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['dadosRfb']['residenteExterior']"
+											},
+											"sink": {
+												"name": "residenteExterior",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['dadosRfb']['descricaoSituacaoCadastral']"
+											},
+											"sink": {
+												"name": "descricaoSituacaoCadastral",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['usPerson']['resposta']"
+											},
+											"sink": {
+												"name": "resposta",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['idUsuarioSeguranca']"
+											},
+											"sink": {
+												"name": "idUsuarioSeguranca",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['respostaValidaPositivacao']"
+											},
+											"sink": {
+												"name": "respostaValidaPositivacao",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['dadosBasicos']['nome']"
+											},
+											"sink": {
+												"name": "candidato_enriquecimentoDados_dadosBasicos_nome",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['dadosBasicos']['cpf']"
+											},
+											"sink": {
+												"name": "candidato_enriquecimentoDados_dadosBasicos_cpf",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['dadosBasicos']['apelido']"
+											},
+											"sink": {
+												"name": "candidato_enriquecimentoDados_dadosBasicos_apelido",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['dadosBasicos']['nomeMae']"
+											},
+											"sink": {
+												"name": "candidato_enriquecimentoDados_dadosBasicos_nomeMae",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['dadosBasicos']['nomePai']"
+											},
+											"sink": {
+												"name": "candidato_enriquecimentoDados_dadosBasicos_nomePai",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['dadosBasicos']['genero']"
+											},
+											"sink": {
+												"name": "genero",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['dadosBasicos']['idade']"
+											},
+											"sink": {
+												"name": "idade",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['dadosBasicos']['dataNascimento']"
+											},
+											"sink": {
+												"name": "dataNascimento",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['dadosBasicos']['nacionalidade']"
+											},
+											"sink": {
+												"name": "nacionalidade",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['enderecos'][0]['tipologia']"
+											},
+											"sink": {
+												"name": "tipologia",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['enderecos'][0]['logradouro']"
+											},
+											"sink": {
+												"name": "candidato_enriquecimentoDados_enderecos_0_logradouro",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['enderecos'][0]['numero']"
+											},
+											"sink": {
+												"name": "candidato_enriquecimentoDados_enderecos_0_numero",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['enderecos'][0]['complemento']"
+											},
+											"sink": {
+												"name": "candidato_enriquecimentoDados_enderecos_0_complemento",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['enderecos'][0]['bairro']"
+											},
+											"sink": {
+												"name": "candidato_enriquecimentoDados_enderecos_0_bairro",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['enderecos'][0]['cep']"
+											},
+											"sink": {
+												"name": "candidato_enriquecimentoDados_enderecos_0_cep",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['enderecos'][0]['pais']"
+											},
+											"sink": {
+												"name": "candidato_enriquecimentoDados_enderecos_0_pais",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['enderecos'][0]['uf']"
+											},
+											"sink": {
+												"name": "uf",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['enderecos'][0]['cidade']"
+											},
+											"sink": {
+												"name": "cidade",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['enderecos'][0]['tipo']"
+											},
+											"sink": {
+												"name": "candidato_enriquecimentoDados_enderecos_0_tipo",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['enderecos'][0]['latitude']"
+											},
+											"sink": {
+												"name": "candidato_enriquecimentoDados_enderecos_0_latitude",
+												"type": "Double"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['enderecos'][0]['longitude']"
+											},
+											"sink": {
+												"name": "candidato_enriquecimentoDados_enderecos_0_longitude",
+												"type": "Double"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['dadosProfissionais'][0]['setor']"
+											},
+											"sink": {
+												"name": "setor",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['dadosProfissionais'][0]['pais']"
+											},
+											"sink": {
+												"name": "candidato_enriquecimentoDados_dadosProfissionais_0_pais",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['dadosProfissionais'][0]['empresa']"
+											},
+											"sink": {
+												"name": "empresa",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['dadosProfissionais'][0]['area']"
+											},
+											"sink": {
+												"name": "area",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['dadosProfissionais'][0]['cargo']"
+											},
+											"sink": {
+												"name": "cargo",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['dadosProfissionais'][0]['salario']"
+											},
+											"sink": {
+												"name": "salario",
+												"type": "Double"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['dadosProfissionais'][0]['status']"
+											},
+											"sink": {
+												"name": "candidato_enriquecimentoDados_dadosProfissionais_0_status",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['dadosProfissionais'][0]['dataAdmissao']"
+											},
+											"sink": {
+												"name": "dataAdmissao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['dadosProfissionais'][0]['dataDemissao']"
+											},
+											"sink": {
+												"name": "dataDemissao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['emails'][0]['endereco']"
+											},
+											"sink": {
+												"name": "endereco",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['emails'][0]['tipo']"
+											},
+											"sink": {
+												"name": "candidato_enriquecimentoDados_emails_0_tipo",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['emails'][0]['prioridade']"
+											},
+											"sink": {
+												"name": "prioridade",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['emails'][0]['ativo']"
+											},
+											"sink": {
+												"name": "candidato_enriquecimentoDados_emails_0_ativo",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['enriquecimentoDados']['kyc']['isPep']"
+											},
+											"sink": {
+												"name": "isPep",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['planoEscolhido']['idAssinatura']"
+											},
+											"sink": {
+												"name": "idAssinatura",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['assinaturaManual']"
+											},
+											"sink": {
+												"name": "assinaturaManual",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['consentimentoPlanoAssinatura']['cpf']"
+											},
+											"sink": {
+												"name": "candidato_consentimentoPlanoAssinatura_cpf",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['consentimentoPlanoAssinatura']['nome']"
+											},
+											"sink": {
+												"name": "candidato_consentimentoPlanoAssinatura_nome",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['consentimentoPlanoAssinatura']['termoId']"
+											},
+											"sink": {
+												"name": "candidato_consentimentoPlanoAssinatura_termoId",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['consentimentoPlanoAssinatura']['versao']"
+											},
+											"sink": {
+												"name": "candidato_consentimentoPlanoAssinatura_versao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['consentimentoPlanoAssinatura']['canal']"
+											},
+											"sink": {
+												"name": "candidato_consentimentoPlanoAssinatura_canal",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['consentimentoPlanoAssinatura']['ativo']"
+											},
+											"sink": {
+												"name": "candidato_consentimentoPlanoAssinatura_ativo",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['consentimentoPlanoAssinatura']['itensTermos'][0]['_id']"
+											},
+											"sink": {
+												"name": "candidato_consentimentoPlanoAssinatura_itensTermos_0_id",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['consentimentoPlanoAssinatura']['itensTermos'][0]['descricao']"
+											},
+											"sink": {
+												"name": "candidato_consentimentoPlanoAssinatura_itensTermos_0_descricao",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['consentimentoPlanoAssinatura']['itensTermos'][0]['aceito']"
+											},
+											"sink": {
+												"name": "candidato_consentimentoPlanoAssinatura_itensTermos_0_aceito",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['consentimentoPlanoAssinatura']['itensTermos'][0]['obrigatorio']"
+											},
+											"sink": {
+												"name": "candidato_consentimentoPlanoAssinatura_itensTermos_0_obrigatorio",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['consentimentoPlanoAssinatura']['_class']"
+											},
+											"sink": {
+												"name": "candidato_consentimentoPlanoAssinatura__class",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['dadosConta']['idCliente']"
+											},
+											"sink": {
+												"name": "idCliente",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['dadosConta']['agencia']"
+											},
+											"sink": {
+												"name": "agencia",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['dadosConta']['conta']"
+											},
+											"sink": {
+												"name": "conta",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['usuarioSegurancaRemovido']"
+											},
+											"sink": {
+												"name": "usuarioSegurancaRemovido",
+												"type": "Boolean"
+											}
+										},
+										{
+											"source": {
+												"path": "$['candidato']['propostaAdcId']"
+											},
+											"sink": {
+												"name": "propostaAdcId",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['qtdeRequisicaoFotoDocumentoFrente']"
+											},
+											"sink": {
+												"name": "qtdeRequisicaoFotoDocumentoFrente",
+												"type": "Int64"
+											}
+										},
+										{
+											"source": {
+												"path": "$['qtdeRequisicaoFotoDocumentoVerso']"
+											},
+											"sink": {
+												"name": "qtdeRequisicaoFotoDocumentoVerso",
+												"type": "Int64"
+											}
+										}
+									],
+									"collectionReference": ""
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_Json_api_dummyjs",
+									"type": "DatasetReference"
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_Json_adls_bootcamp",
+									"type": "DatasetReference",
+									"parameters": {
+										"p_container": {
+											"value": "@pipeline().parameters.p_container_destino",
+											"type": "Expression"
+										},
+										"p_diretorio": {
+											"value": "@variables('v_diretorio_completo')",
+											"type": "Expression"
+										},
+										"p_arquivo": {
+											"value": "@variables('v_arquivo_destino')",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"concurrency": 30,
+		"parameters": {
+			"p_container_destino": {
+				"type": "string",
+				"defaultValue": "landing"
+			},
+			"p_diretorio_destino": {
+				"type": "string",
+				"defaultValue": "web_api/dummy_js"
+			},
+			"p_data_particao": {
+				"type": "string"
+			},
+			"p_colecao_origem": {
+				"type": "string",
+				"defaultValue": "onboardings"
+			},
+			"p_formato_data_particao": {
+				"type": "string",
+				"defaultValue": "D"
+			},
+			"p_tipo_carga": {
+				"type": "string",
+				"defaultValue": "I"
+			},
+			"p_rb_etapa_ingestao": {
+				"type": "string"
+			},
+			"p_data_inicio_carga": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"v_data_particao": {
+				"type": "String"
+			},
+			"v_diretorio_destino": {
+				"type": "String"
+			},
+			"v_arquivo_destino": {
+				"type": "String"
+			},
+			"v_diretorio_completo": {
+				"type": "String"
+			},
+			"v_rascunho_nome_tabela_delta": {
+				"type": "String"
+			},
+			"v_filtro_origem": {
+				"type": "String"
+			},
+			"v_selecao_coluna": {
+				"type": "String"
+			},
+			"v_etapa_bronze": {
+				"type": "Boolean"
+			}
+		},
+		"folder": {
+			"name": "2.3 Raw e Bronze/Web API/Dummy JS/Unit"
+		},
+		"annotations": [
+			"@pipeline().parameters.p_colecao_origem"
+		],
+		"lastPublishTime": "2022-05-11T11:13:04Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

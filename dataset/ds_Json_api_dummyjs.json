@@ -1,9 +1,12 @@
 {
-	"name": "Json_omdbapi",
+	"name": "ds_Json_api_dummyjs",
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "ls_http_api_dummyjson",
 			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "Fontes Externas"
 		},
 		"annotations": [],
 		"type": "Json",

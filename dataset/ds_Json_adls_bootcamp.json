@@ -1,17 +1,23 @@
 {
-	"name": "Json_saida_api",
+	"name": "ds_Json_adls_bootcamp",
 	"properties": {
 		"linkedServiceName": {
-			"referenceName": "ls_data_lake",
+			"referenceName": "ls_adls_bootcamp",
 			"type": "LinkedServiceReference"
 		},
 		"parameters": {
-			"container_name": {
+			"p_container": {
 				"type": "string"
 			},
-			"file_name": {
+			"p_diretorio": {
+				"type": "string"
+			},
+			"p_arquivo": {
 				"type": "string"
 			}
+		},
+		"folder": {
+			"name": "Azure Storage Account"
 		},
 		"annotations": [],
 		"type": "Json",
@@ -19,11 +25,15 @@
 			"location": {
 				"type": "AzureBlobFSLocation",
 				"fileName": {
-					"value": "@dataset().file_name",
+					"value": "@dataset().p_arquivo",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@dataset().p_diretorio",
 					"type": "Expression"
 				},
 				"fileSystem": {
-					"value": "@dataset().container_name",
+					"value": "@dataset().p_container",
 					"type": "Expression"
 				}
 			}
