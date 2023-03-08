@@ -59,7 +59,7 @@
 				"typeProperties": {
 					"variableName": "v_arquivo_destino",
 					"value": {
-						"value": "@toLower(concat(\n    pipeline().parameters.p_colecao_origem,\n    '__', \n    if(\n        empty(variables('v_data_particao')),\n        formatDateTime(utcNow(), 'yyyyMMdd'),\n        replace(variables('v_data_particao'), '/', '')\n    )\n))",
+						"value": "@toLower(concat(\n    pipeline().parameters.p_colecao_origem,\n    '__', \n    if(\n        empty(variables('v_data_particao')),\n        formatDateTime(utcNow(), 'yyyyMMdd'),\n        replace(variables('v_data_particao'), '/', '')\n    ),\n    '.json'\n))",
 						"type": "Expression"
 					}
 				}
@@ -73,7 +73,7 @@
 				"typeProperties": {
 					"variableName": "v_diretorio_destino",
 					"value": {
-						"value": "@toLower(if(\n    empty(pipeline().parameters.p_diretorio_destino),\n    'cosmos_db/onboardings_db',\n    pipeline().parameters.p_diretorio_destino\n))",
+						"value": "@toLower(if(\n    empty(pipeline().parameters.p_diretorio_destino),\n    'web_api/dummy_js',\n    pipeline().parameters.p_diretorio_destino\n))",
 						"type": "Expression"
 					}
 				}
@@ -3006,7 +3006,7 @@
 			},
 			"p_colecao_origem": {
 				"type": "string",
-				"defaultValue": "onboardings"
+				"defaultValue": "users"
 			},
 			"p_formato_data_particao": {
 				"type": "string",
