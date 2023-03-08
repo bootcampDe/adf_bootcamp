@@ -1,0 +1,19 @@
+{
+	"name": "ls_adb_bootcamp",
+	"properties": {
+		"annotations": [],
+		"type": "AzureDatabricks",
+		"typeProperties": {
+			"domain": "https://adb-7064496062078686.6.azuredatabricks.net",
+			"accessToken": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "ls_kv_bootcamp",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "secret-key-adb-bootcamp"
+			},
+			"existingClusterId": "0308-000550-f2vhlrql"
+		}
+	}
+}
