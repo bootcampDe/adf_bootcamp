@@ -2,7 +2,7 @@
 	"name": "Json_omdbapi",
 	"properties": {
 		"linkedServiceName": {
-			"referenceName": "HttpServer1",
+			"referenceName": "ls_http_api_dummyjson",
 			"type": "LinkedServiceReference"
 		},
 		"annotations": [],
