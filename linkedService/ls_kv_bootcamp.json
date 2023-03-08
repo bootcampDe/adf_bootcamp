@@ -1,0 +1,10 @@
+{
+	"name": "ls_kv_bootcamp",
+	"properties": {
+		"annotations": [],
+		"type": "AzureKeyVault",
+		"typeProperties": {
+			"baseUrl": "https://kv-bootcampde-viking.vault.azure.net/"
+		}
+	}
+}
