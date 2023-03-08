@@ -2,7 +2,7 @@
 	"name": "json_movies",
 	"properties": {
 		"linkedServiceName": {
-			"referenceName": "ls_http_api",
+			"referenceName": "HttpServer1",
 			"type": "LinkedServiceReference"
 		},
 		"parameters": {
