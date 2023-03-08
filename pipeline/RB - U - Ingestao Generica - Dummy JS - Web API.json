@@ -133,7 +133,7 @@
 							"userProperties": [],
 							"typeProperties": {
 								"notebookPath": {
-									"value": "@concat(\n    '/Repos/adb_bootcamp/delta/bronze/',\n    variables('v_diretorio_destino'), '/generico_json'\n)",
+									"value": "@concat(\n    '/Repos/bootcamp_viking@outlook.com/adb_bootcamp/delta/bronze/',\n    variables('v_diretorio_destino'), '/generico_json'\n)",
 									"type": "Expression"
 								},
 								"baseParameters": {
