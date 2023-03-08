@@ -8,7 +8,7 @@
 		"parameters": {
 			"token_api": {
 				"type": "string",
-				"defaultValue": "UQBeoisT7QGEkNHPEpJ8CeGtWfoUm8Lh"
+				"defaultValue": "b948ea49"
 			},
 			"Relative_URL": {
 				"type": "string"
