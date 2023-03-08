@@ -1,9 +1,9 @@
 {
-	"name": "COPY_API",
+	"name": "RB - U - Ingestao - Dummy JS - Web API",
 	"properties": {
 		"activities": [
 			{
-				"name": "times criticas",
+				"name": "CPD - Etapa Ingestao Landing",
 				"type": "Copy",
 				"dependsOn": [],
 				"policy": {
@@ -39,80 +39,37 @@
 				},
 				"inputs": [
 					{
-						"referenceName": "json_nytimes",
-						"type": "DatasetReference",
-						"parameters": {
-							"token_api": "MHHyeXITaJYe4dZE3WsBNsjAmg9N1Xn3",
-							"Relative_URL": "critics/all.json?"
-						}
-					}
-				],
-				"outputs": [
-					{
-						"referenceName": "Json_saida_api",
-						"type": "DatasetReference",
-						"parameters": {
-							"container_name": "trusted",
-							"file_name": "criticas_filmes.json"
-						}
-					}
-				]
-			},
-			{
-				"name": "filmes omdba",
-				"type": "Copy",
-				"dependsOn": [],
-				"policy": {
-					"timeout": "7.00:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"source": {
-						"type": "JsonSource",
-						"storeSettings": {
-							"type": "HttpReadSettings",
-							"requestMethod": "GET",
-							"requestTimeout": ""
-						},
-						"formatSettings": {
-							"type": "JsonReadSettings"
-						}
-					},
-					"sink": {
-						"type": "JsonSink",
-						"storeSettings": {
-							"type": "AzureBlobFSWriteSettings"
-						},
-						"formatSettings": {
-							"type": "JsonWriteSettings"
-						}
-					},
-					"enableStaging": false
-				},
-				"inputs": [
-					{
-						"referenceName": "Json_omdbapi",
+						"referenceName": "ds_Json_api_dummyjs",
 						"type": "DatasetReference"
 					}
 				],
 				"outputs": [
 					{
-						"referenceName": "Json_saida_api",
+						"referenceName": "ds_Json_adls_bootcamp",
 						"type": "DatasetReference",
 						"parameters": {
-							"container_name": "trusted",
-							"file_name": "criticas_filmes.json"
+							"p_container": "landing",
+							"p_diretorio": "criticas_filmes.json"
 						}
 					}
 				]
 			}
 		],
+		"parameters": {
+			"p_container_destino": {
+				"type": "string",
+				"defaultValue": "landing"
+			},
+			"p_diretorio_destino": {
+				"type": "string",
+				"defaultValue": "api/dummyjs/user"
+			},
+			"p_arquivo": {
+				"type": "string"
+			}
+		},
 		"folder": {
-			"name": "Api"
+			"name": "2.3 Raw e Bronze/Web API/Dummy JS/Unit"
 		},
 		"annotations": []
 	}
