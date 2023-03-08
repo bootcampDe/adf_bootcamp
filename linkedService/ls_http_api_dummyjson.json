@@ -1,0 +1,13 @@
+{
+	"name": "ls_http_api_dummyjson",
+	"properties": {
+		"description": "https://dummyjson.com/",
+		"annotations": [],
+		"type": "HttpServer",
+		"typeProperties": {
+			"url": "https://dummyjson.com/",
+			"enableServerCertificateValidation": true,
+			"authenticationType": "Anonymous"
+		}
+	}
+}
